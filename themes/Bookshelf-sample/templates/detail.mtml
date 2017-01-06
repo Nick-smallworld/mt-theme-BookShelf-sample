@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <title>書籍詳細</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="<$MTStaticWebPath$>data-api/v3/js/mt-data-api.js"></script>
+
+  <script>
+
+  $(function() {
+
+    "use stict";
+
+// Movable Type Data API のインスタンス生成
+
+    const api = new MT.DataAPI({
+      baseUrl: "<$MTCGIPath$><$MTDataAPIScript$>",
+      clientId: "BookShelf"
+    });
+
+// MTのブログIDを変数 siteId に格納
+
+    const siteId = <$MTBlogID$> ;
+
+// 書籍一覧から記事IDを取得するため、GETで渡された文字列を解析する関数 [getUrlParams] を定義
+
+    function getUrlParams() {
+      const query = window.location.search.substring(1);
+      const vars = query.split('&');
+      let args = {};
+      for (let i = 0; i < vars.length; i++) {
+        let tmp = vars[i].split('=');
+        args[tmp[0]] = tmp[1];
+      }
+      return args;
+    }
+
+// 関数 [getUrlParams] を使って、GETの引数を変数 params に格納
+
+    const params = getUrlParams();
+
+// Data APIのエンドポイント [getEntry] を利用して記事情報を取得。
+// ブログID、params内から取得した記事IDを指定して値を取得
+// エラーが発生した場合メッセージ表示
+
+    api.getEntry(siteId, params.EntryID, function(response) {
+      if (response.error) {
+        $("#message").text("エラーが発生しました。");
+        return;
+      }
+
+// 記事のデータを取得したら、カスタムフィールド内の値を各変数へ格納
+// jQuery の関数 [grep] を利用してカスタムフィールドのベースネームを検索
+// 指定したネースネームを元に、連想配列を生成する
+
+      const bookauthor = $.grep(response.customFields, function(item) {
+        return item.basename === "bookauthor";
+      });
+      const isbn10 = $.grep(response.customFields, function(item) {
+        return item.basename === "isbn10";
+      });
+      const isbn13 = $.grep(response.customFields, function(item) {
+        return item.basename === "isbn13";
+      });
+      const publisheddate = $.grep(response.customFields, function(item) {
+        return item.basename === "publisheddate";
+      });
+      const thumbnail = $.grep(response.customFields, function(item) {
+        return item.basename === "bookthumbnail";
+      });
+
+// 取得した記事データの値を、jQueryを利用してhtml上に表示
+
+      $("#BookTitle").text(response.title);
+      $("#BookAuthor").text(bookauthor[0].value);
+      $("#isbn10").text(isbn10[0].value);
+      $("#isbn13").text(isbn13[0].value);
+      $("#BookAuthor").text(bookauthor[0].value);
+      $("#PublishedDate").text(publisheddate[0].value);
+      $("#BookThumbnail").html('<img src=\"' + thumbnail[0].value + '\"  />');
+      $("#BookDescription").text(response.body);
+      $("#BookMemo").text(response.more);
+    });
+  });
+
+  </script>
+
+</head>
+<body>
+
+<div class="container">
+
+<$MTInclude module="navigation"$>
+
+  <h1>書籍詳細</h1>
+  <div id="message"></div>
+
+    <div>
+      <p class="h4">書籍タイトル:</p>
+      <p id="BookTitle"></p>
+    </div>
+
+    <div>
+      <p class="h4">著者:</p>
+      <p id="BookAuthor"></p>
+    </div>
+
+    <div>
+      <p class="h4">ISBN10:</p>
+      <p id="isbn10"></p>
+    </div>
+
+    <div>
+      <p class="h4">ISBN13:</p>
+      <p id="isbn13"></p>
+    </div>
+
+    <div>
+      <p class="h4">出版日:</p>
+      <p id="PublishedDate"></p>
+    </div>
+
+    <div>
+      <p class="h4">書籍サムネイル:</p>
+      <p id="BookThumbnail"></p>
+    </div>
+
+    <div>
+      <p class="h4">書籍概要:</p>
+      <p id="BookDescription"></p>
+    </div>
+
+    <div>
+      <p class="h4">メモ:</p>
+      <p id="BookMemo"></p>
+    </div>
+
+</div>
+
+
+</html>

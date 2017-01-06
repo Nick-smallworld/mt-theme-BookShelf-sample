@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <title>書籍一覧</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="<$MTStaticWebPath$>data-api/v3/js/mt-data-api.js"></script>
+
+  <script>
+
+  $(function() {
+
+  "use strict";
+
+// Movable Type Data API のインスタンス生成
+
+    const api = new MT.DataAPI({
+      baseUrl: "<$MTCGIPath$><$MTDataAPIScript$>",
+      clientId: "BookShelf"
+    });
+
+// MTのブログIDを変数 siteId に格納
+
+    const siteId = <$MTBlogID$> ;
+
+// 一覧表示を行うため、登録されている記事(書籍)の総数を変数 EtnriesCount に格納
+
+    const EntriesCount = <$MTBlogEntryCount$> ;
+
+// 変数 [params] に、取得したい記事数を連想配列として渡す。
+// 今回は記事数だけだが、必要に応じて取得したいデータを連想配列にして収める。
+// 詳細はドキュメント https://github.com/movabletype/mt-data-api-sdk-js/wiki/DataAPI-SDK-english-MT.DataAPI-Endpoint-method-listEntries の[params]
+// https://www.movabletype.jp/developers/data-api/v3-reference.html#entries-entries-get の [URI Parameters] などを参照    
+
+    const params = {
+      limit: EntriesCount,
+    };
+
+// JavaScript SDK の関数 [listEntries] を使って、記事のデータをまとめて取得
+// エラーが起こった場合、または登録されている書籍がない場合、メッセージ表示用変数 [html] を利用してアラート表示する
+// データを取得したら、htmlを生成して、BookListのdivに表示を行う
+
+    api.listEntries(siteId, params, function(response) {
+    let html = '';
+      if (response.error) {
+        html += "<p>データ取得エラーです。</p>";
+        $("#BookList").html(html);
+        return;
+      }
+
+      if (!response.totalResults) {
+        html += "<p>登録された書籍がありません。</p>";
+        $("#BookList").html(html);
+        return;
+      }
+
+      html += '<ul class="list-group">';
+      for (let i = 0; i < EntriesCount; i++) {
+        const entry = response.items[i];
+        html += '<li class="list-group-item"><a href="<$MTBlogURL$>detail.html?EntryID=' + entry.id + '">' + entry.title + '</a></li>';
+      }
+      html += "</ul>";
+
+      $("#BookList").html(html);
+    });
+  });
+  </script>
+
+</head>
+<body>
+
+<div class="container">
+<$MTInclude module="navigation"$>
+
+<h2>書籍一覧</h2>
+  <p id="message"></p>
+
+  <div id="content">
+
+    <div id="BookList"></div>
+
+  </div>
+</div>
+
+
+</html>

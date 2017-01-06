@@ -1,0 +1,85 @@
+---
+author_link: 'https://github.com/Nick-smallworld'
+author_name: Nick-smallworld
+class: both
+description: "Google Books API + Movbale Type Data APIを組み合わせた、書籍管理システムの構築サンプルテーマです。"
+thumbnail_file: thumb.png
+thumbnail_file_medium: thumb-medium.png
+thumbnail_file_small: thumb-small.png
+elements:
+  custom_fields:
+    component: commercial
+    data:
+      bookauthor:
+        default: ''
+        description: 書籍の著者名
+        name: 著者
+        obj_type: entry
+        options: ~
+        required: '0'
+        tag: EntryDataBookAuthor
+        type: text
+      bookthumbnail:
+        default: ''
+        description: 書籍サムネイルのURL
+        name: 書籍サムネイル
+        obj_type: entry
+        options: ~
+        required: '0'
+        tag: EntryDataBookThumbnail
+        type: url
+      isbn10:
+        default: ''
+        description: ISBN10
+        name: ISBN10
+        obj_type: entry
+        options: ~
+        required: '0'
+        tag: EntryDataIsbn10
+        type: text
+      isbn13:
+        default: ''
+        description: 'ISBN13'
+        name: ISBN13
+        obj_type: entry
+        options: ~
+        required: '0'
+        tag: EntryDataIsbn13
+        type: text
+      publisheddate:
+        default: ''
+        description: 書籍の出版日
+        name: 出版日
+        obj_type: entry
+        options: date
+        required: '0'
+        tag: EntryDataPublishedDate
+        type: text
+    importer: custom_fields
+  template_set:
+    component: ~
+    data:
+      base_path: templates
+      label: 'exported_template set'
+      templates:
+        index:
+          main_index:
+            label: メインページ
+            outfile: index.html
+            rebuild_me: '1'
+          booklist:
+            label: 書籍一覧
+            outfile: booklist.html
+            rebuild_me: '1'
+          detail:
+            label: 書籍詳細
+            outfile: detail.html
+            rebuild_me: '1'
+        module:
+          navigation:
+            label: Navigation
+    importer: template_set
+id: theme_from_bookshelf
+label: '書籍管理システム(sample)'
+name: '書籍管理システム(sample)'
+version: '1.0'

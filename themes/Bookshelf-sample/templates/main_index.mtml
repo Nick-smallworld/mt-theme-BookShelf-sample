@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <title>書籍データベース</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="<$MTStaticWebPath$>data-api/v3/js/mt-data-api.js"></script>
+
+  <script>
+
+  $(function() {
+
+    "use strict";
+
+// Movable Type Data API のインスタンス生成
+
+    const api = new MT.DataAPI({
+      baseUrl: "<$MTCGIPath$><$MTDataAPISCript$>",
+      clientId: "BookShelf"
+    });
+
+// MTのブログIDを変数 siteId に格納
+
+    const siteId = <$MTBlogID$> ;
+
+// メッセージ表示のために使う変数 [html] を定義
+       
+    let html = '';
+
+// MTにサインインしているかどうか、トークンを確認する。
+// トークンがない場合、サインインを促す。存在した場合、hiddenで隠されている登録用フォームを表示する
+
+    if (!api.getTokenData()) {
+
+      html += "<p>書籍を登録するためにはサインインしてください。</p>";
+      html += "<p><input type=\"button\" id=\"signin\" class=\"btn btn-primary btn-lg\" value=\"サインイン\"></p>";
+      $("#message").html(html);
+
+    } else {
+
+      $("#content").show();
+    }
+
+// サインインをクリックしたら、SDKの関数 [getAuthorizationUrl] を実行して、サインインを行う
+
+    $("#signin").on("click", function() {
+      location.href = api.getAuthorizationUrl(location.href);
+    });
+
+// フォームID [isbn] に入力があった場合、jQueryの関数 [change] を使ってISBNコードを取得。
+// Google Books APIへ問い合わせを行う。
+// もしGoogle Books APIに書籍が存在しない(totalItemsが0の場合)、入力欄に表示されたデータをすべて消去し、該当書籍がないとメッセージを表示する
+
+    $("#isbn").change(function() {
+      const isbn = $("#isbn").val();
+      const url = "https://www.googleapis.com/books/v1/volumes?q=isbn:" + isbn;
+
+      $.getJSON(url, function(data) {
+        if(!data.totalItems) {
+          $("#isbn").val("");
+          $("#BookTitle").text("");
+          $("#BookAuthor").text("");
+          $("#isbn10").text("");
+          $("#isbn13").text("");
+          $("#PublishedDate").text("");
+          $("#BookThumbnail").text("");
+          $("#BookDescription").text("");
+          $("#BookMemo").val("");
+
+          $("#message").html('<p class="bg-warning" id="warning">該当する書籍がありません。</p>');
+          $('#message > p').fadeOut(3000);
+
+        } else {
+
+// 該当書籍が存在した場合、JSONをパースして入力項目のデータを取得する
+
+          $("#BookTitle").text(data.items[0].volumeInfo.title);
+          $("#isbn13").text(data.items[0].volumeInfo.industryIdentifiers[0].identifier);
+          $("#isbn10").text(data.items[0].volumeInfo.industryIdentifiers[1].identifier);
+          $("#BookAuthor").text(data.items[0].volumeInfo.authors[0]);
+          $("#PublishedDate").text(data.items[0].volumeInfo.publishedDate);
+          $("#BookDescription").text(data.items[0].volumeInfo.description);
+          $("#BookThumbnail").html('<img src=\"' + data.items[0].volumeInfo.imageLinks.smallThumbnail + '\" />');
+
+        }
+
+      });
+    });
+
+// 登録ボタンをクリックしたら、MTへ登録するための変数を生成する。
+// カスタムフィールドに登録するべきデータは、変数 [arr] 内に連想配列として各項目を生成する。
+// 登録用のデータが準備できたら、JavaScript SDK の関数 [createEntry] を利用して、MTの記事として登録する。
+
+    $("#submit").on("click", function() {
+
+      const arr = [{
+        basename: "isbn10",
+        value: $("#isbn10").text()
+       }, {
+         basename: "isbn13",
+         value: $("#isbn13").text()
+       }, {
+          basename: "bookauthor",
+          value: $("#BookAuthor").text()
+       }, {
+          basename: "publisheddate",
+          value: $("#PublishedDate").text()
+       }, {
+          basename: "bookthumbnail",
+          value: $("#BookThumbnail").children("img").attr("src")
+       }];
+
+      const entry = {};
+        entry.title = $("#BookTitle").text();
+        entry.body = $("#BookDescription").text();
+        entry.more = $("#BookMemo").val();
+        entry.customFields = arr;
+
+      api.createEntry(siteId, entry, function(response) {
+
+        if (response.error) {
+
+  // 書籍登録時にエラーが発生した場合、ページトップに戻り、エラーメッセージを表示
+                             
+          $('html,body').animate({ scrollTop: 0 }, '1');
+          $("#message").html('<p class="bg-warning">エラーが発生しました。</p>');
+          $('#message > p').fadeOut(3000);
+
+        } else {
+
+  // 書籍データ登録が成功した場合、表示データを消去
+
+          $("#isbn").val("");
+          $("#BookTitle").text("");
+          $("#BookAuthor").text("");
+          $("#isbn10").text("");
+          $("#isbn13").text("");
+          $("#PublishedDate").text("");
+          $("#BookThumbnail").text("");
+          $("#BookDescription").text("");
+          $("#BookMemo").val("");
+
+  // ページトップに戻り、登録完了のメッセージを表示
+                             
+          $('html,body').animate({ scrollTop: 0 }, '1');
+          $("#message").html('<p class="bg-warning">書籍データを登録しました。</p>');
+          $('#message > p').fadeOut(3000);
+
+        }
+
+      });
+
+    });
+
+  });
+
+  </script>
+
+</head>
+<body>
+
+<div class="container" id="container">
+
+<$MTInclude module="navigation"$>
+
+  <h2>書籍データベース</h2>
+  <div id="message"></div>
+
+  <div id="content" style="display: none;">
+    <div class="form-group">
+      <label for="isbn">ISBNを入力してください:</label>
+      <input type="text" class="form-control" id="isbn" placeholder="Input ISBN code">
+    </div>
+
+    <div>
+      <p class="h4">書籍タイトル:</p>
+      <p id="BookTitle"></p>
+    </div>
+
+    <div>
+      <p class="h4">著者:</p>
+      <p id="BookAuthor"></p>
+    </div>
+
+    <div>
+      <p class="h4">ISBN10:</p>
+      <p id="isbn10"></p>
+    </div>
+
+    <div>
+      <p class="h4">ISBN13:</p>
+      <p id="isbn13"></p>
+    </div>
+
+    <div>
+      <p class="h4">出版日:</p>
+      <p id="PublishedDate"></p>
+    </div>
+
+    <div>
+      <p class="h4">書籍サムネイル:</p>
+      <p id="BookThumbnail"></p>
+    </div>
+
+    <div>
+      <p class="h4">書籍概要:</p>
+      <p id="BookDescription"></p>
+    </div>
+
+    <div>
+      <p class="h4">メモ:</p>
+      <textarea class="form-control" rows="5" id="BookMemo"></textarea>
+    </div>
+
+    <button class="btn btn-default" id="submit">登録する</button>
+
+  </div>
+</div>
+
+</html>
